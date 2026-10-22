@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>XR Fusion EDU – Laboratorio Inmersivo</title>
+<meta name="description" content="Laboratorio de modelos 3D · RA · RV · Mediación con IA. Plataforma educativa para explorar modelos GLB en 3D, realidad aumentada y realidad virtual.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.1.0/model-viewer.min.js"></script>
+<script src="https://aframe.io/releases/1.8.0/aframe.min.js"></script>
+<style>
+:root{
+  --deep:#031426;--bg:#020B15;--blue:#00B7FF;--lime:#B6E800;--orange:#FF7A1A;--white:#F7FBFF;--muted:#A9C4D7;
+  --glass:rgba(8,32,58,.55);--glass2:rgba(3,20,38,.75);--line:rgba(0,183,255,.22);
+  --radius:16px;--shadow:0 18px 50px -20px rgba(0,183,255,.35);
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:var(--bg);color:var(--white);font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow-x:hidden}
+body{
+  background:
+   radial-gradient(1200px 600px at 50% -10%,rgba(0,183,255,.18),transparent 60%),
+   radial-gradient(800px 500px at 100% 100%,rgba(182,232,0,.07),transparent 60%),
+   linear-gradient(rgba(0,183,255,.05) 1px,transparent 1px) 0 0/40px 40px,
+   linear-gradient(90deg,rgba(0,183,255,.05) 1px,transparent 1px) 0 0/40px 40px,
+   var(--bg);
+}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--lime);outline-offset:2px}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+/* Header */
+header.top{display:flex;align-items:center;gap:16px;padding:12px 20px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,rgba(3,20,38,.95),rgba(3,20,38,.6));backdrop-filter:blur(12px);position:sticky;top:0;z-index:50;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:12px;min-width:0}
+.brand svg{width:44px;height:44px;flex:none;filter:drop-shadow(0 0 10px rgba(0,183,255,.6))}
+.brand h1{margin:0;font-size:1.25rem;font-weight:800;letter-spacing:.02em}
+.brand h1 span{color:var(--blue)}
+.brand p{margin:2px 0 0;font-size:.78rem;color:var(--muted)}
+.status{display:flex;gap:8px;margin-left:auto;flex-wrap:wrap}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;border:1px solid var(--line);background:var(--glass);font-size:.75rem;font-weight:600}
+.dot{width:8px;height:8px;border-radius:50%;background:#55697a}
+.dot.ok{background:var(--lime);box-shadow:0 0 8px var(--lime)}
+.dot.warn{background:var(--orange);box-shadow:0 0 8px var(--orange)}
+.dot.wait{background:var(--blue);animation:pulse 1.4s infinite}
+@keyframes pulse{50%{opacity:.3}}
+.hbtns{display:flex;gap:8px}
+/* Buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;padding:8px 14px;border-radius:12px;border:1px solid var(--line);background:rgba(0,183,255,.08);color:var(--white);font-weight:600;font-size:.85rem;cursor:pointer;transition:transform .15s,background .2s,box-shadow .2s,border-color .2s}
+.btn:hover{background:rgba(0,183,255,.18);border-color:var(--blue);box-shadow:0 0 18px -4px rgba(0,183,255,.6)}
+.btn:active{transform:translateY(1px)}
+.btn svg{width:18px;height:18px}
+.btn.primary{background:linear-gradient(135deg,#0090d0,var(--blue));border-color:transparent;color:#00121f}
+.btn.lime{background:linear-gradient(135deg,#8fbf00,var(--lime));border-color:transparent;color:#0b1400}
+.btn.orange{background:linear-gradient(135deg,#e85f00,var(--orange));border-color:transparent;color:#1d0a00}
+.btn.ghost{background:transparent}
+.btn.danger:hover{border-color:var(--orange);background:rgba(255,122,26,.15)}
+.btn.sm{min-height:32px;padding:4px 10px;font-size:.78rem}
+.btn[aria-pressed="true"]{background:rgba(182,232,0,.18);border-color:var(--lime);color:var(--lime)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+/* Layout */
+main.grid{display:grid;grid-template-columns:300px minmax(0,1fr) 360px;gap:16px;padding:16px;min-height:calc(100vh - 74px)}
+.card{background:var(--glass);border:1px solid var(--line);border-radius:var(--radius);backdrop-filter:blur(14px);box-shadow:var(--shadow);padding:16px;min-width:0}
+.card h2{margin:0 0 12px;font-size:.8rem;letter-spacing:.16em;text-transform:uppercase;color:var(--blue);display:flex;align-items:center;gap:8px}
+.card h2 .count{margin-left:auto;background:rgba(182,232,0,.15);color:var(--lime);padding:2px 8px;border-radius:999px;font-size:.72rem;letter-spacing:0}
+.col{display:flex;flex-direction:column;gap:16px;min-width:0}
+.hint{font-size:.75rem;color:var(--muted);line-height:1.45}
+/* Library */
+.drop{border:1.5px dashed rgba(0,183,255,.45);border-radius:14px;padding:18px 12px;text-align:center;cursor:pointer;transition:.2s;background:rgba(0,183,255,.04)}
+.drop.over{border-color:var(--lime);background:rgba(182,232,0,.08)}
+.drop svg{width:34px;height:34px;color:var(--blue)}
+.drop strong{display:block;margin:6px 0 2px;font-size:.9rem}
+.row{display:flex;gap:8px}
+input[type=text],input[type=url],select,textarea{width:100%;background:rgba(2,11,21,.7);border:1px solid var(--line);border-radius:10px;padding:9px 11px;font-size:.85rem;color:var(--white)}
+textarea{resize:vertical;min-height:70px}
+label.f{display:block;font-size:.72rem;color:var(--muted);margin:10px 0 4px;font-weight:600;letter-spacing:.04em}
+.lib{list-style:none;margin:12px 0 0;padding:0;display:flex;flex-direction:column;gap:8px;max-height:46vh;overflow:auto}
+.lib li{display:flex;align-items:center;gap:10px;padding:10px;border-radius:12px;border:1px solid transparent;background:rgba(2,11,21,.5);cursor:pointer;transition:.2s}
+.lib li:hover{border-color:var(--line)}
+.lib li.active{border-color:var(--lime);background:rgba(182,232,0,.08)}
+.lib .ico{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;background:rgba(0,183,255,.15);color:var(--blue);flex:none}
+.lib .meta{min-width:0;flex:1}
+.lib .meta b{display:block;font-size:.84rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lib .meta small{color:var(--muted);font-size:.7rem}
+/* Viewer */
+.viewer{padding:0;display:flex;flex-direction:column;overflow:hidden}
+.tabs{display:flex;gap:6px;padding:10px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.tab{flex:1;min-width:110px}
+.tab[aria-selected="true"]{background:linear-gradient(135deg,rgba(0,183,255,.35),rgba(0,183,255,.12));border-color:var(--blue);box-shadow:inset 0 0 0 1px rgba(0,183,255,.4)}
+.stage{position:relative;flex:1;min-height:480px;background:radial-gradient(circle at 50% 60%,rgba(0,183,255,.15),transparent 60%),var(--deep)}
+model-viewer{width:100%;height:100%;position:absolute;inset:0;--poster-color:transparent;--progress-bar-color:var(--lime);background:transparent}
+#vrWrap{position:absolute;inset:0;display:none}
+#vrWrap a-scene{width:100%;height:100%}
+.overlay{position:absolute;left:12px;right:12px;bottom:12px;display:flex;gap:8px;flex-wrap:wrap;justify-content:center;pointer-events:none}
+.overlay>*{pointer-events:auto}
+.overlay .btn{background:rgba(3,20,38,.8);backdrop-filter:blur(8px)}
+.overlay .btn.primary,.overlay .btn.lime,.overlay .btn.orange{background:revert-layer}
+.badge-mode{position:absolute;top:12px;left:12px;padding:6px 10px;border-radius:999px;background:rgba(3,20,38,.8);border:1px solid var(--line);font-size:.72rem;font-weight:700;letter-spacing:.12em;color:var(--lime)}
+.scale{display:flex;align-items:center;gap:8px;background:rgba(3,20,38,.8);border:1px solid var(--line);border-radius:12px;padding:4px 10px;font-size:.75rem}
+.scale input{width:110px;accent-color:var(--lime)}
+.loader{position:absolute;top:12px;right:12px;width:180px;background:rgba(3,20,38,.85);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:.72rem;display:none}
+.loader .bar{height:5px;border-radius:9px;background:rgba(255,255,255,.1);margin-top:6px;overflow:hidden}
+.loader .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--blue),var(--lime));transition:width .2s}
+.err{position:absolute;inset:auto 12px 80px 12px;margin:auto;max-width:520px;background:rgba(40,12,0,.9);border:1px solid var(--orange);color:#ffd9c0;border-radius:12px;padding:12px 14px;font-size:.82rem;display:none}
+.arPanel{position:absolute;top:50px;left:50%;transform:translateX(-50%);width:min(92%,440px);background:rgba(3,20,38,.88);border:1px solid var(--line);border-radius:14px;padding:14px;text-align:center;font-size:.82rem;display:none}
+.arPanel .btn{margin-top:10px;font-size:1rem;padding:12px 22px}
+.pick-on model-viewer{cursor:crosshair}
+.pickBanner{position:absolute;top:12px;left:50%;transform:translateX(-50%);background:var(--orange);color:#1d0a00;font-weight:700;padding:6px 12px;border-radius:999px;font-size:.75rem;display:none}
+.pick-on .pickBanner{display:block}
+/* Hotspots */
+.hotspot{width:22px;height:22px;border-radius:50%;border:2px solid var(--white);background:var(--orange);box-shadow:0 0 0 4px rgba(255,122,26,.3),0 0 14px var(--orange);cursor:pointer;padding:0;position:relative;color:#1d0a00;font-size:.65rem;font-weight:800}
+.hotspot .ann{position:absolute;left:28px;top:50%;transform:translateY(-50%);background:rgba(3,20,38,.95);color:var(--white);border:1px solid var(--orange);border-radius:10px;padding:6px 10px;font-size:.75rem;font-weight:500;white-space:nowrap;max-width:240px;overflow:hidden;text-overflow:ellipsis;opacity:0;pointer-events:none;transition:.2s}
+.hotspot:hover .ann,.hotspot:focus .ann,.hotspot.open .ann{opacity:1}
+/* Right panel */
+.ptabs{display:flex;gap:4px;margin-bottom:14px;background:rgba(2,11,21,.6);padding:4px;border-radius:12px}
+.ptabs .btn{flex:1;border:none;background:transparent;font-size:.78rem;min-height:36px}
+.ptabs .btn[aria-selected="true"]{background:rgba(0,183,255,.2);color:var(--blue)}
+.mission{margin-top:14px;padding:14px;border-radius:14px;border:1px solid rgba(182,232,0,.35);background:linear-gradient(160deg,rgba(182,232,0,.08),rgba(0,183,255,.05))}
+.mission h3{margin:0 0 4px;font-size:.85rem;color:var(--lime);letter-spacing:.06em}
+.progress{height:8px;border-radius:9px;background:rgba(255,255,255,.08);overflow:hidden;margin:10px 0}
+.progress i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--blue),var(--lime));transition:width .4s}
+.steps{list-style:none;padding:0;margin:0;display:grid;gap:6px}
+.steps label{display:flex;gap:10px;align-items:flex-start;padding:8px;border-radius:10px;background:rgba(2,11,21,.5);cursor:pointer;font-size:.78rem;color:var(--muted)}
+.steps b{color:var(--white);display:block;font-size:.8rem}
+.steps input{accent-color:var(--lime);width:18px;height:18px;margin-top:2px}
+.challenge{margin-top:10px;padding:10px;border-left:3px solid var(--orange);background:rgba(255,122,26,.08);border-radius:8px;font-size:.8rem;display:none}
+.annlist{list-style:none;padding:0;margin:10px 0;display:grid;gap:6px;max-height:200px;overflow:auto}
+.annlist li{display:flex;align-items:center;gap:8px;padding:8px;border-radius:10px;background:rgba(2,11,21,.5);font-size:.8rem}
+.annlist .n{width:22px;height:22px;border-radius:50%;background:var(--orange);color:#1d0a00;display:grid;place-items:center;font-weight:800;font-size:.7rem;flex:none}
+.annlist span.t{flex:1;min-width:0;overflow-wrap:anywhere}
+pre.prompt{white-space:pre-wrap;background:rgba(2,11,21,.75);border:1px solid var(--line);border-radius:12px;padding:12px;font-size:.75rem;line-height:1.5;max-height:300px;overflow:auto;color:var(--muted);font-family:ui-monospace,Menlo,Consolas,monospace}
+.sep{height:1px;background:var(--line);margin:16px 0}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+/* Modals */
+dialog{border:1px solid var(--line);border-radius:22px;background:linear-gradient(160deg,rgba(6,30,55,.97),rgba(2,11,21,.98));color:var(--white);max-width:min(720px,94vw);padding:0;box-shadow:0 30px 90px -20px rgba(0,183,255,.5)}
+dialog::backdrop{background:rgba(2,11,21,.75);backdrop-filter:blur(6px)}
+.mbody{padding:26px}
+.mbody h2{margin:0 0 6px;font-size:1.5rem;font-weight:800;background:linear-gradient(90deg,var(--white),var(--blue));-webkit-background-clip:text;background-clip:text;color:transparent}
+.kicker{font-size:.7rem;letter-spacing:.2em;color:var(--lime);font-weight:700}
+.roles{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:18px 0}
+.role{padding:14px;border-radius:14px;border:1px solid var(--line);background:rgba(0,183,255,.06)}
+.role b{display:block;font-size:.78rem;letter-spacing:.12em;margin-bottom:6px}
+.role:nth-child(1) b{color:var(--blue)}.role:nth-child(2) b{color:var(--lime)}.role:nth-child(3) b{color:var(--orange)}
+.role p{margin:0;font-size:.8rem;color:var(--muted);line-height:1.45}
+blockquote{margin:0;padding:12px 16px;border-left:3px solid var(--lime);background:rgba(182,232,0,.06);border-radius:8px;font-style:italic}
+.mactions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;flex-wrap:wrap}
+.diag{list-style:none;padding:0;margin:14px 0;display:grid;gap:8px}
+.diag li{display:flex;gap:12px;padding:12px;border-radius:12px;background:rgba(2,11,21,.6);border:1px solid var(--line);font-size:.82rem}
+.diag li b{display:block;margin-bottom:2px}
+.diag li small{color:var(--muted);line-height:1.4}
+/* Toast */
+#toasts{position:fixed;bottom:18px;right:18px;display:flex;flex-direction:column;gap:8px;z-index:100;max-width:calc(100vw - 36px)}
+.toast{padding:10px 14px;border-radius:12px;background:rgba(3,20,38,.95);border:1px solid var(--blue);font-size:.84rem;box-shadow:var(--shadow);animation:tin .3s ease}
+.toast.warn{border-color:var(--orange)}.toast.ok{border-color:var(--lime)}
+@keyframes tin{from{opacity:0;transform:translateY(10px)}}
+footer{text-align:center;color:var(--muted);font-size:.75rem;padding:8px 16px 24px;font-style:italic}
+/* Responsive */
+@media (max-width:1200px){
+  main.grid{grid-template-columns:280px minmax(0,1fr)}
+  #pedagogy{grid-column:1/-1}
+}
+@media (max-width:780px){
+  main.grid{grid-template-columns:1fr;padding:10px;gap:12px}
+  #viewerCol{order:1}#library{order:2}#pedagogy{order:3}
+  .stage{min-height:62vh}
+  .status{margin-left:0;width:100%}
+  .hbtns{width:100%}.hbtns .btn{flex:1}
+  .roles{grid-template-columns:1fr}
+  .btn{min-height:44px}
+  .tab{min-width:0}
+  .lib{max-height:none}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <svg viewBox="0 0 48 48" aria-hidden="true"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#00B7FF"/><stop offset="1" stop-color="#B6E800"/></linearGradient></defs><path d="M24 3 43 14v20L24 45 5 34V14z" fill="none" stroke="url(#lg)" stroke-width="2.5"/><path d="M24 3v42M5 14l38 20M43 14 5 34" stroke="#00B7FF" stroke-opacity=".35" stroke-width="1.2"/><circle cx="24" cy="24" r="6" fill="#FF7A1A"/></svg>
+    <div><h1>XR Fusion <span>EDU</span></h1><p>Laboratorio de modelos 3D · RA · RV · Mediación con IA</p></div>
+  </div>
+  <div class="status" role="status" aria-label="Estado de capacidades">
+    <span class="pill"><i class="dot wait" id="st3d"></i>3D</span>
+    <span class="pill"><i class="dot wait" id="stAR"></i>RA</span>
+    <span class="pill"><i class="dot wait" id="stVR"></i>RV</span>
+  </div>
+  <div class="hbtns">
+    <button class="btn" id="btnDiag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>Diagnóstico</button>
+    <button class="btn ghost" id="btnHelp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3M12 17h.01"/></svg>Ayuda</button>
+  </div>
+</header>
+
+<main class="grid">
+  <!-- LIBRARY -->
+  <section class="card col" id="library" aria-labelledby="libT">
+    <div>
+      <h2 id="libT">Biblioteca 3D <span class="count" id="libCount">0</span></h2>
+      <div class="drop" id="drop" tabindex="0" role="button" aria-label="Arrastra o selecciona archivos GLB">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 16V4m0 0-4 4m4-4 4 4M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>
+        <strong>Arrastra tus modelos .glb</strong>
+        <span class="hint">o pulsa para seleccionar varios archivos</span>
+      </div>
+      <input type="file" id="fileIn" accept=".glb,model/gltf-binary" multiple class="sr-only" aria-label="Seleccionar archivos GLB">
+      <button class="btn primary" id="btnPick" style="width:100%;margin-top:10px">Seleccionar archivos</button>
+      <label class="f" for="urlIn">Cargar por URL pública HTTPS</label>
+      <div class="row"><input type="url" id="urlIn" placeholder="https://.../modelo.glb"><button class="btn" id="btnUrl">Añadir</button></div>
+      <p class="hint">El servidor remoto debe permitir CORS (cabecera <em>Access-Control-Allow-Origin</em>). Si no, descarga el GLB y cárgalo localmente.</p>
+    </div>
+    <ul class="lib" id="libList" aria-label="Modelos cargados"></ul>
+  </section>
+
+  <!-- VIEWER -->
+  <section class="card viewer col" id="viewerCol" aria-label="Visualizador inmersivo">
+    <div class="tabs" role="tablist">
+      <button class="btn tab" role="tab" data-mode="3d" aria-selected="true">Explorar 3D</button>
+      <button class="btn tab" role="tab" data-mode="ar" aria-selected="false">Realidad aumentada</button>
+      <button class="btn tab" role="tab" data-mode="vr" aria-selected="false">Laboratorio RV</button>
+    </div>
+    <div class="stage" id="stage">
+      <model-viewer id="mv" camera-controls touch-action="pan-y" shadow-intensity="1.1" shadow-softness=".8" exposure="1.05" environment-image="neutral" ar ar-modes="webxr scene-viewer quick-look" ar-placement="floor" auto-rotate interaction-prompt="auto" alt="Modelo 3D activo" crossorigin="anonymous">
+        <button slot="ar-button" style="display:none"></button>
+      </model-viewer>
+      <div id="vrWrap"></div>
+      <span class="badge-mode" id="modeBadge">MODO 3D</span>
+      <div class="pickBanner">Haz clic sobre el modelo para fijar el punto</div>
+      <div class="loader" id="loader" aria-live="polite">Cargando modelo… <span id="pct">0%</span><div class="bar"><i id="bar"></i></div></div>
+      <div class="err" id="err" role="alert"></div>
+      <div class="arPanel" id="arPanel">
+        <div id="arMsg">Comprobando compatibilidad…</div>
+        <button class="btn orange" id="btnAR">ACTIVAR CÁMARA RA</button>
+      </div>
+      <div class="overlay" id="ctl3d">
+        <button class="btn sm" id="btnRot" aria-pressed="true">Rotación auto</button>
+        <button class="btn sm" id="btnAnim" aria-pressed="false" disabled>Animación</button>
+        <button class="btn sm" id="btnReset">Reiniciar cámara</button>
+        <label class="scale">Escala <input type="range" id="scale" min="0.2" max="3" step="0.05" value="1" aria-label="Escala del modelo"><span id="scaleV">1.0×</span></label>
+        <button class="btn sm" id="btnFull">Pantalla completa</button>
+      </div>
+      <div class="overlay" id="ctlVR" style="display:none">
+        <button class="btn lime" id="btnEnterVR">ENTRAR CON VISOR</button>
+        <button class="btn" id="btnBack3D">VOLVER A 3D</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- PEDAGOGY -->
+  <section class="card col" id="pedagogy" aria-labelledby="pedT">
+    <div>
+      <h2 id="pedT">Mediación didáctica <button class="btn sm" id="btnNarrate" style="margin-left:auto" aria-label="Narrar misión">🔊 Narrar</button></h2>
+      <div class="ptabs" role="tablist">
+        <button class="btn" role="tab" data-ptab="act" aria-selected="true">Actividad</button>
+        <button class="btn" role="tab" data-ptab="poi" aria-selected="false">Puntos</button>
+        <button class="btn" role="tab" data-ptab="ai" aria-selected="false">IA</button>
+      </div>
+
+      <div data-panel="act">
+        <label class="f" for="aTitle">Título de la experiencia</label>
+        <input type="text" id="aTitle" value="Exploración inmersiva del modelo">
+        <div class="grid2">
+          <div><label class="f" for="aArea">Área</label>
+            <select id="aArea"><option>Informática</option><option>Ciencias naturales</option><option>Matemáticas</option><option>Salud</option><option>Historia</option><option>Arte</option><option>Ingeniería</option><option>Formación docente</option></select></div>
+          <div><label class="f" for="aLevel">Nivel</label>
+            <select id="aLevel"><option>Educación inicial</option><option>Educación básica</option><option selected>Educación media</option><option>Educación técnica</option><option>Educación superior</option></select></div>
+        </div>
+        <label class="f" for="aGoal">Objetivo de aprendizaje</label>
+        <textarea id="aGoal">Analizar la estructura del objeto tridimensional y relacionar sus componentes con conceptos del área.</textarea>
+        <div class="mission">
+          <h3>MISIÓN XR: MIRAR COMO INVESTIGADOR</h3>
+          <div class="progress" aria-hidden="true"><i id="mBar"></i></div>
+          <div class="hint" id="mTxt">0 de 4 etapas completadas</div>
+          <ul class="steps" id="steps"></ul>
+          <div class="challenge" id="challenge" aria-live="polite"></div>
+          <div class="row" style="margin-top:10px"><button class="btn orange" id="btnChallenge" style="flex:1">GENERAR RETO</button><button class="btn" id="btnSheet" style="flex:1">DESCARGAR FICHA</button></div>
+        </div>
+      </div>
+
+      <div data-panel="poi" hidden>
+        <label class="f" for="pText">Texto del punto de interés</label>
+        <input type="text" id="pText" placeholder="Ej.: Visor del casco" maxlength="140">
+        <div class="row" style="margin-top:8px"><button class="btn orange" id="btnPin" aria-pressed="false" style="flex:1">FIJAR PUNTO</button><button class="btn danger" id="btnClearPins">Limpiar</button></div>
+        <p class="hint">Activa FIJAR PUNTO y haz clic sobre la superficie del modelo (modo 3D).</p>
+        <ul class="annlist" id="annList"></ul>
+        <div class="sep"></div>
+        <h2>Atribución</h2>
+        <label class="f" for="atName">Nombre del modelo</label><input type="text" id="atName">
+        <div class="grid2"><div><label class="f" for="atAuthor">Autor</label><input type="text" id="atAuthor"></div><div><label class="f" for="atLic">Licencia</label><input type="text" id="atLic" placeholder="CC BY 4.0"></div></div>
+        <label class="f" for="atUrl">URL de origen</label><input type="url" id="atUrl">
+        <button class="btn lime" id="btnAttr" style="width:100%;margin-top:10px">GUARDAR ATRIBUCIÓN</button>
+        <p class="hint">Los modelos descargados de Sketchfab u otros repositorios deben usarse respetando su licencia y citando al autor.</p>
+      </div>
+
+      <div data-panel="ai" hidden>
+        <p class="hint">Copiloto pedagógico sin API: construye un prompt didáctico que puedes pegar en el asistente de IA de tu preferencia.</p>
+        <div class="grid2">
+          <div><label class="f" for="iType">Tipo de apoyo</label>
+            <select id="iType"><option value="seq">Secuencia antes-durante-después</option><option value="soc">Preguntas socráticas</option><option value="rub">Rúbrica de desempeño</option><option value="dua">Adaptaciones DUA</option><option value="case">Caso / simulación profesional</option></select></div>
+          <div><label class="f" for="iDur">Duración</label>
+            <select id="iDur"><option>20</option><option selected>35</option><option>50</option><option>90</option></select></div>
+        </div>
+        <button class="btn primary" id="btnPrompt" style="width:100%;margin-top:12px">CREAR PROMPT DIDÁCTICO</button>
+        <pre class="prompt" id="promptOut" aria-live="polite" tabindex="0">El prompt aparecerá aquí.</pre>
+        <div class="row"><button class="btn" id="btnCopy" style="flex:1">COPIAR PROMPT</button><button class="btn" id="btnListen" style="flex:1">ESCUCHAR</button></div>
+      </div>
+    </div>
+  </section>
+</main>
+<footer>“La tecnología inmersiva tiene sentido cuando permite observar, comprender, explicar y aplicar conocimientos que serían difíciles de explorar por otros medios”.</footer>
+
+<dialog id="welcome" aria-labelledby="wT">
+  <div class="mbody">
+    <div class="kicker">XR FUSION EDU · BIENVENIDA</div>
+    <h2 id="wT">El objeto que cambia de realidad</h2>
+    <p style="color:var(--muted);line-height:1.6">"Un mismo modelo puede ser observado en una pantalla, situado sobre una mesa o recorrido desde dentro. El reto no es identificar cuál tecnología impresiona más, sino cuál ayuda mejor a aprender".</p>
+    <div class="roles">
+      <div class="role"><b>OBSERVADOR</b><p>Encontrar detalles que una imagen plana no revela.</p></div>
+      <div class="role"><b>CONECTOR</b><p>Relacionar los detalles con conceptos académicos.</p></div>
+      <div class="role"><b>CRÍTICO</b><p>Justificar cuándo conviene utilizar 3D, RA, RV u otra alternativa accesible.</p></div>
+    </div>
+    <blockquote>"Si la tecnología desapareciera, ¿qué aprendizaje debería permanecer?"</blockquote>
+    <div class="mactions"><button class="btn" id="wExplore">EXPLORAR PRIMERO</button><button class="btn lime" id="wStart">INICIAR CON EL MODELO</button></div>
+  </div>
+</dialog>
+
+<dialog id="diagDlg" aria-labelledby="dT">
+  <div class="mbody">
+    <div class="kicker">COMPATIBILIDAD</div>
+    <h2 id="dT">Diagnóstico XR</h2>
+    <ul class="diag" id="diagList"></ul>
+    <div class="mactions"><button class="btn" id="dRe">Volver a comprobar</button><button class="btn primary" id="dClose">Cerrar</button></div>
+  </div>
+</dialog>
+
+<dialog id="helpDlg" aria-labelledby="hT">
+  <div class="mbody">
+    <div class="kicker">AYUDA</div>
+    <h2 id="hT">Cómo usar el laboratorio</h2>
+    <ul style="color:var(--muted);line-height:1.7;font-size:.88rem;padding-left:18px">
+      <li><b>Biblioteca:</b> arrastra archivos .glb o añade una URL HTTPS con CORS habilitado.</li>
+      <li><b>Explorar 3D:</b> arrastra para rotar, rueda o pellizco para zoom, dos dedos para desplazar.</li>
+      <li><b>RA:</b> en móviles compatibles (Android con ARCore, iOS con Quick Look) coloca el modelo sobre tu entorno.</li>
+      <li><b>RV:</b> recorre el laboratorio con WASD y ratón; con visor WebXR usa "Entrar con visor".</li>
+      <li><b>Puntos:</b> escribe un texto, pulsa FIJAR PUNTO y haz clic sobre el modelo.</li>
+      <li><b>IA:</b> genera un prompt pedagógico y cópialo en tu asistente preferido.</li>
+      <li>Atajos: <kbd>1</kbd> 3D · <kbd>2</kbd> RA · <kbd>3</kbd> RV · <kbd>Esc</kbd> cancela fijar punto.</li>
+    </ul>
+    <div class="mactions"><button class="btn primary" id="hClose">Entendido</button></div>
+  </div>
+</dialog>
+
+<div id="toasts" aria-live="polite"></div>
+
+<script>
+(() => {
+'use strict';
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const el = (tag, props = {}, ...kids) => { const e = document.createElement(tag); for (const [k, v] of Object.entries(props)) { if (k === 'class') e.className = v; else if (k === 'text') e.textContent = v; else if (k.startsWith('on')) e.addEventListener(k.slice(2), v); else e.setAttribute(k, v); } kids.forEach(k => e.append(k)); return e; };
+const fmtSize = b => b == null ? '—' : b < 1048576 ? (b / 1024).toFixed(0) + ' KB' : (b / 1048576).toFixed(1) + ' MB';
+const uid = () => Math.random().toString(36).slice(2, 10);
+
+/* ===== Centralized state ===== */
+const DEMO = 'https://modelviewer.dev/shared-assets/models/Astronaut.glb';
+const state = {
+  mode: '3d',
+  activeId: null,
+  library: [],            // {id,name,src,size,origin,objectURL}
+  annotations: {},        // id -> [{id,text,position,normal}]
+  attribution: {},        // id -> {name,author,license,url}
+  autoRotate: true,
+  animPlaying: false,
+  pinMode: false,
+  mission: [false, false, false, false],
+  xr: { https: false, embedded: false, ar: null, vr: null, modelStatus: 'sin modelo' },
+};
+const STEPS = [
+  ['OBSERVAR', 'Examina el modelo desde diferentes ángulos.'],
+  ['SEÑALAR', 'Identifica características relevantes con puntos de interés.'],
+  ['EXPLICAR', 'Relaciona las características con conceptos académicos.'],
+  ['TRANSFERIR', 'Aplica lo aprendido a una situación nueva.'],
+];
+
+const mv = $('#mv');
+const activeModel = () => state.library.find(m => m.id === state.activeId) || null;
+
+/* ===== Toasts ===== */
+function toast(msg, type = '') {
+  const t = el('div', { class: 'toast ' + type, text: msg, role: 'status' });
+  $('#toasts').append(t); setTimeout(() => t.remove(), 3600);
+}
+
+/* ===== Library ===== */
+function addModel({ name, src, size = null, origin, objectURL = false }) {
+  const m = { id: uid(), name, src, size, origin, objectURL };
+  state.library.push(m); state.annotations[m.id] = [];
+  state.attribution[m.id] = { name, author: '', license: '', url: objectURL ? '' : src };
+  renderLibrary(); return m;
+}
+function importFiles(files) {
+  let n = 0;
+  [...files].forEach(f => {
+    if (!/\.glb$/i.test(f.name)) { toast(`"${f.name}" no es un archivo .glb`, 'warn'); return; }
+    const m = addModel({ name: f.name.replace(/\.glb$/i, ''), src: URL.createObjectURL(f), size: f.size, origin: 'Archivo local', objectURL: true });
+    if (++n === 1) selectModel(m.id);
+  });
+  if (n) toast(`${n} modelo(s) importado(s)`, 'ok');
+}
+async function importUrl(url) {
+  let u;
+  try { u = new URL(url); } catch { toast('URL no válida', 'warn'); return; }
+  if (u.protocol !== 'https:') { toast('La URL debe usar HTTPS', 'warn'); return; }
+  let size = null;
+  try {
+    const r = await fetch(u.href, { method: 'HEAD', mode: 'cors' });
+    if (!r.ok) throw new Error(r.status);
+    size = +r.headers.get('content-length') || null;
+  } catch (e) { toast('No se pudo verificar la URL (posible bloqueo CORS). Se intentará cargar.', 'warn'); }
+  const name = decodeURIComponent(u.pathname.split('/').pop() || 'modelo').replace(/\.(glb|gltf)$/i, '');
+  const m = addModel({ name, src: u.href, size, origin: u.hostname });
+  selectModel(m.id); $('#urlIn').value = '';
+}
+function removeModel(id) {
+  const i = state.library.findIndex(m => m.id === id); if (i < 0) return;
+  const [m] = state.library.splice(i, 1);
+  if (m.objectURL) URL.revokeObjectURL(m.src);
+  delete state.annotations[id]; delete state.attribution[id];
+  if (state.activeId === id) { state.activeId = null; const next = state.library[0]; if (next) selectModel(next.id); else { mv.removeAttribute('src'); state.xr.modelStatus = 'sin modelo'; setVRModel(null); renderAnnotations(); } }
+  renderLibrary(); toast(`"${m.name}" eliminado`);
+}
+function selectModel(id) {
+  const m = state.library.find(x => x.id === id); if (!m) return;
+  state.activeId = id; state.xr.modelStatus = 'cargando';
+  $('#err').style.display = 'none';
+  clearHotspots();
+  mv.src = m.src; mv.scale = '1 1 1'; $('#scale').value = 1; $('#scaleV').textContent = '1.0×';
+  state.animPlaying = false; syncAnimBtn();
+  setVRModel(m.src);
+  renderLibrary(); renderAttribution(); renderAnnotations();
+}
+function renderLibrary() {
+  const ul = $('#libList'); ul.replaceChildren();
+  $('#libCount').textContent = state.library.length;
+  if (!state.library.length) ul.append(el('li', { class: 'hint', text: 'Sin modelos. Carga un archivo .glb.' }));
+  state.library.forEach(m => {
+    const del = el('button', { class: 'btn sm danger', 'aria-label': `Eliminar ${m.name}`, text: '✕' });
+    del.addEventListener('click', e => { e.stopPropagation(); removeModel(m.id); });
+    const li = el('li', { class: m.id === state.activeId ? 'active' : '', tabindex: '0', role: 'option', 'aria-selected': String(m.id === state.activeId) },
+      el('span', { class: 'ico', text: '◆' }),
+      el('div', { class: 'meta' }, el('b', { text: m.name }), el('small', { text: `${fmtSize(m.size)} · ${m.origin}` })), del);
+    li.addEventListener('click', () => selectModel(m.id));
+    li.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectModel(m.id); } if (e.key === 'Delete') removeModel(m.id); });
+    ul.append(li);
+  });
+}
+
+/* ===== model-viewer events ===== */
+mv.addEventListener('progress', e => {
+  const p = e.detail.totalProgress; $('#loader').style.display = p < 1 ? 'block' : 'none';
+  $('#bar').style.width = (p * 100) + '%'; $('#pct').textContent = Math.round(p * 100) + '%';
+});
+mv.addEventListener('load', () => {
+  state.xr.modelStatus = 'cargado'; setDot('#st3d', 'ok');
+  $('#btnAnim').disabled = !(mv.availableAnimations && mv.availableAnimations.length);
+  renderHotspots(); updateAR();
+});
+mv.addEventListener('error', () => {
+  state.xr.modelStatus = 'error'; $('#loader').style.display = 'none';
+  const e = $('#err'); e.textContent = 'No se pudo abrir el modelo. Verifica que sea un GLB válido y, si es remoto, que el servidor permita CORS.'; e.style.display = 'block';
+  setDot('#st3d', 'warn'); toast('Error al cargar el modelo', 'warn');
+});
+
+/* ===== 3D controls ===== */
+$('#btnRot').addEventListener('click', () => { state.autoRotate = !state.autoRotate; mv.autoRotate = state.autoRotate; $('#btnRot').setAttribute('aria-pressed', state.autoRotate); spinVR(); toast(state.autoRotate ? 'Rotación automática activada' : 'Rotación automática desactivada'); });
+function syncAnimBtn() { $('#btnAnim').setAttribute('aria-pressed', state.animPlaying); $('#btnAnim').textContent = state.animPlaying ? 'Pausar animación' : 'Animación'; }
+$('#btnAnim').addEventListener('click', () => {
+  if (!mv.availableAnimations?.length) return;
+  if (state.animPlaying) mv.pause(); else { if (!mv.animationName) mv.animationName = mv.availableAnimations[0]; mv.play(); }
+  state.animPlaying = !state.animPlaying; syncAnimBtn();
+});
+$('#btnReset').addEventListener('click', () => { mv.cameraOrbit = 'auto auto auto'; mv.cameraTarget = 'auto auto auto'; mv.fieldOfView = 'auto'; mv.jumpCameraToGoal(); toast('Cámara restablecida'); });
+$('#scale').addEventListener('input', e => { const s = (+e.target.value); mv.scale = `${s} ${s} ${s}`; $('#scaleV').textContent = s.toFixed(1) + '×'; mv.updateFraming?.(); });
+$('#btnFull').addEventListener('click', () => { const s = $('#stage'); if (document.fullscreenElement) document.exitFullscreen(); else s.requestFullscreen?.().catch(() => toast('Pantalla completa no disponible', 'warn')); });
+
+/* ===== Modes ===== */
+function setMode(mode) {
+  if (mode === 'vr' && !window.AFRAME) { toast('A-Frame no se cargó; se mantiene el modo 3D', 'warn'); mode = '3d'; }
+  state.mode = mode; setPin(false);
+  $$('.tab').forEach(t => t.setAttribute('aria-selected', t.dataset.mode === mode));
+  $('#modeBadge').textContent = { '3d': 'MODO 3D', ar: 'MODO RA', vr: 'LABORATORIO RV' }[mode];
+  mv.style.visibility = mode === 'vr' ? 'hidden' : 'visible';
+  $('#vrWrap').style.display = mode === 'vr' ? 'block' : 'none';
+  $('#ctl3d').style.display = mode === 'vr' ? 'none' : 'flex';
+  $('#ctlVR').style.display = mode === 'vr' ? 'flex' : 'none';
+  $('#arPanel').style.display = mode === 'ar' ? 'block' : 'none';
+  if (mode === 'vr') { buildVR(); setTimeout(() => window.dispatchEvent(new Event('resize')), 50); }
+  if (mode === 'ar') updateAR();
+}
+$$('.tab').forEach(t => t.addEventListener('click', () => setMode(t.dataset.mode)));
+
+/* ===== AR ===== */
+function updateAR() {
+  const msg = $('#arMsg'), btn = $('#btnAR');
+  if (!state.xr.https) { msg.textContent = 'La RA requiere conexión segura HTTPS. Publica en GitHub Pages o usa localhost.'; btn.disabled = true; return; }
+  if (!activeModel()) { msg.textContent = 'Selecciona un modelo primero.'; btn.disabled = true; return; }
+  const can = !!mv.canActivateAR; state.xr.ar = can; setDot('#stAR', can ? 'ok' : 'warn');
+  btn.disabled = !can;
+  msg.textContent = can ? 'Dispositivo compatible. Apunta la cámara a una superficie plana tras activar.' : 'Este dispositivo o navegador no admite RA (requiere Android con ARCore/Chrome o iOS con Safari). El modo 3D sigue disponible.';
+}
+$('#btnAR').addEventListener('click', async () => { try { await mv.activateAR(); } catch { toast('No se pudo iniciar la RA', 'warn'); } });
+mv.addEventListener('ar-status', e => { if (e.detail.status === 'failed') toast('La sesión de RA falló en este dispositivo', 'warn'); if (e.detail.status === 'session-started') toast('RA activa: mueve el dispositivo para detectar superficies', 'ok'); });
+
+/* ===== VR (A-Frame) ===== */
+if (window.AFRAME) {
+  AFRAME.registerComponent('fit-gltf', {
+    schema: { size: { default: 1.6 }, base: { default: 1.0 } },
+    init() { this.el.addEventListener('model-loaded', () => this.fit()); },
+    fit() {
+      const obj = this.el.getObject3D('mesh'); if (!obj) return;
+      const T = AFRAME.THREE; obj.position.set(0, 0, 0); obj.scale.set(1, 1, 1); obj.updateMatrixWorld(true);
+      const box = new T.Box3().setFromObject(obj), size = box.getSize(new T.Vector3());
+      const max = Math.max(size.x, size.y, size.z) || 1, s = this.data.size / max;
+      obj.scale.setScalar(s); obj.updateMatrixWorld(true);
+      const b2 = new T.Box3().setFromObject(obj), c = b2.getCenter(new T.Vector3());
+      const wp = this.el.object3D.getWorldPosition(new T.Vector3());
+      obj.position.set(-(c.x - wp.x), -(b2.min.y - wp.y), -(c.z - wp.z));
+    }
+  });
+  AFRAME.registerComponent('spin-model', {
+    schema: { enabled: { default: true }, speed: { default: 20 } },
+    tick(t, dt) { if (this.data.enabled) this.el.object3D.rotation.y += (this.data.speed * Math.PI / 180) * (dt / 1000); }
+  });
+}
+let vrBuilt = false;
+function buildVR() {
+  if (vrBuilt) return; vrBuilt = true;
+  const wrap = $('#vrWrap');
+  wrap.innerHTML = `
+  <a-scene embedded renderer="antialias:true;colorManagement:true" vr-mode-ui="enabled:false" background="color:#031426" fog="type:exponential;color:#031426;density:0.035">
+    <a-entity light="type:ambient;color:#5c86b0;intensity:0.6"></a-entity>
+    <a-entity light="type:directional;color:#ffffff;intensity:1.1;castShadow:true" position="3 6 4"></a-entity>
+    <a-entity light="type:point;color:#00B7FF;intensity:1.6;distance:12" position="0 3 0"></a-entity>
+    <a-entity light="type:point;color:#B6E800;intensity:0.7;distance:10" position="-4 2 -4"></a-entity>
+    <a-plane rotation="-90 0 0" width="60" height="60" material="color:#041a30;roughness:0.9" shadow="receive:true"></a-plane>
+    <a-entity id="gridFloor"></a-entity>
+    <a-cylinder position="0 0.1 -3" radius="1.8" height="0.2" material="color:#062844;metalness:0.6;roughness:0.3" shadow="receive:true"></a-cylinder>
+    <a-ring position="0 0.21 -3" rotation="-90 0 0" radius-inner="1.65" radius-outer="1.8" material="color:#00B7FF;emissive:#00B7FF;emissiveIntensity:1;shader:flat"></a-ring>
+    <a-torus position="0 0.6 -3" rotation="90 0 0" radius="2.3" radius-tubular="0.02" material="color:#00B7FF;shader:flat" animation="property:rotation;to:90 360 0;loop:true;dur:16000;easing:linear"></a-torus>
+    <a-torus position="0 1.2 -3" rotation="90 0 0" radius="2.6" radius-tubular="0.015" material="color:#B6E800;shader:flat;opacity:0.8;transparent:true" animation="property:rotation;to:90 -360 0;loop:true;dur:22000;easing:linear"></a-torus>
+    <a-entity id="vrModel" position="0 0.2 -3" fit-gltf="size:1.8" spin-model="enabled:${state.autoRotate}" shadow="cast:true"></a-entity>
+    <a-text value="XR FUSION EDU · LABORATORIO" position="0 3.4 -5" align="center" color="#F7FBFF" width="7"></a-text>
+    <a-entity id="rig" position="0 0 1.5">
+      <a-entity camera look-controls wasd-controls="acceleration:20" position="0 1.6 0">
+        <a-entity cursor="fuse:true;fuseTimeout:1500" raycaster="objects:.clickable" position="0 0 -1" geometry="primitive:ring;radiusInner:0.008;radiusOuter:0.014" material="color:#B6E800;shader:flat"></a-entity>
+      </a-entity>
+      <a-entity laser-controls="hand:right" raycaster="objects:.clickable;lineColor:#00B7FF"></a-entity>
+      <a-entity laser-controls="hand:left" raycaster="objects:.clickable;lineColor:#B6E800"></a-entity>
+    </a-entity>
+  </a-scene>`;
+  const g = wrap.querySelector('#gridFloor');
+  for (let i = -15; i <= 15; i += 1.5) {
+    g.append(el('a-box', { position: `${i} 0.005 0`, width: '0.015', height: '0.01', depth: '30', material: 'color:#0a4f7a;shader:flat' }));
+    g.append(el('a-box', { position: `0 0.005 ${i}`, width: '30', height: '0.01', depth: '0.015', material: 'color:#0a4f7a;shader:flat' }));
+  }
+  const m = activeModel(); if (m) setVRModel(m.src);
+}
+function setVRModel(src) {
+  const e = document.querySelector('#vrModel'); if (!e) return;
+  e.removeAttribute('gltf-model'); if (src) e.setAttribute('gltf-model', `url(${src})`);
+}
+function spinVR() { document.querySelector('#vrModel')?.setAttribute('spin-model', 'enabled', state.autoRotate); }
+$('#btnEnterVR').addEventListener('click', () => {
+  const sc = document.querySelector('a-scene');
+  if (!state.xr.vr) { toast('No se detectó un visor WebXR. Usa WASD y el ratón para recorrer el laboratorio.', 'warn'); return; }
+  sc?.enterVR().catch(() => toast('No se pudo entrar en RV', 'warn'));
+});
+$('#btnBack3D').addEventListener('click', () => setMode('3d'));
+
+/* ===== Annotations ===== */
+function setPin(on) {
+  state.pinMode = on; $('#btnPin').setAttribute('aria-pressed', on);
+  $('#stage').classList.toggle('pick-on', on); mv.autoRotate = on ? false : state.autoRotate;
+}
+$('#btnPin').addEventListener('click', () => {
+  if (!activeModel()) { toast('Selecciona un modelo', 'warn'); return; }
+  if (!$('#pText').value.trim()) { toast('Escribe el texto del punto primero', 'warn'); $('#pText').focus(); return; }
+  if (state.mode !== '3d') setMode('3d');
+  setPin(!state.pinMode);
+});
+mv.addEventListener('click', ev => {
+  if (!state.pinMode) return;
+  const r = mv.getBoundingClientRect();
+  const hit = mv.positionAndNormalFromPoint(ev.clientX - r.left, ev.clientY - r.top);
+  if (!hit) { toast('Haz clic directamente sobre la superficie del modelo', 'warn'); return; }
+  addAnnotation($('#pText').value.trim(), hit.position.toString(), hit.normal.toString());
+  $('#pText').value = ''; setPin(false);
+});
+function addAnnotation(text, position, normal) {
+  const list = state.annotations[state.activeId]; list.push({ id: uid(), text, position, normal });
+  renderHotspots(); renderAnnotations(); toast('Punto de interés añadido', 'ok');
+  if (!state.mission[1]) { state.mission[1] = true; renderMission(); }
+}
+function removeAnnotation(aid) {
+  const list = state.annotations[state.activeId]; const i = list.findIndex(a => a.id === aid);
+  if (i >= 0) list.splice(i, 1); renderHotspots(); renderAnnotations();
+}
+function clearHotspots() { mv.querySelectorAll('.hotspot').forEach(h => h.remove()); }
+function renderHotspots() {
+  clearHotspots(); const list = state.annotations[state.activeId] || [];
+  list.forEach((a, i) => {
+    const b = el('button', { class: 'hotspot', slot: `hotspot-${a.id}`, 'data-position': a.position, 'data-normal': a.normal, 'data-visibility-attribute': 'visible', 'aria-label': `Punto ${i + 1}: ${a.text}` }, document.createTextNode(String(i + 1)), el('span', { class: 'ann', text: a.text }));
+    b.addEventListener('click', e => { e.stopPropagation(); b.classList.toggle('open'); });
+    mv.append(b);
+  });
+}
+function renderAnnotations() {
+  const ul = $('#annList'); ul.replaceChildren(); const list = state.annotations[state.activeId] || [];
+  if (!list.length) ul.append(el('li', { class: 'hint', text: 'Sin puntos de interés en este modelo.' }));
+  list.forEach((a, i) => {
+    const del = el('button', { class: 'btn sm danger', text: '✕', 'aria-label': `Eliminar punto ${i + 1}` });
+    del.addEventListener('click', () => removeAnnotation(a.id));
+    ul.append(el('li', {}, el('span', { class: 'n', text: String(i + 1) }), el('span', { class: 't', text: a.text }), del));
+  });
+}
+$('#btnClearPins').addEventListener('click', () => { if (!state.activeId) return; state.annotations[state.activeId] = []; renderHotspots(); renderAnnotations(); toast('Anotaciones eliminadas'); });
+
+/* ===== Attribution ===== */
+function renderAttribution() {
+  const a = state.attribution[state.activeId] || {};
+  $('#atName').value = a.name || ''; $('#atAuthor').value = a.author || ''; $('#atLic').value = a.license || ''; $('#atUrl').value = a.url || '';
+}
+$('#btnAttr').addEventListener('click', () => {
+  if (!state.activeId) { toast('Selecciona un modelo', 'warn'); return; }
+  state.attribution[state.activeId] = { name: $('#atName').value.trim(), author: $('#atAuthor').value.trim(), license: $('#atLic').value.trim(), url: $('#atUrl').value.trim() };
+  toast('Atribución guardada', 'ok');
+});
+
+/* ===== Mission ===== */
+function renderMission() {
+  const ul = $('#steps'); ul.replaceChildren();
+  STEPS.forEach(([t, d], i) => {
+    const cb = el('input', { type: 'checkbox', id: 'st' + i }); cb.checked = state.mission[i];
+    cb.addEventListener('change', () => { state.mission[i] = cb.checked; renderMission(); if (state.mission.every(Boolean)) toast('¡Misión completada! 🎓', 'ok'); });
+    ul.append(el('li', {}, el('label', { for: 'st' + i }, cb, el('span', {}, el('b', { text: `${i + 1}. ${t}` }), document.createTextNode(d)))));
+  });
+  const done = state.mission.filter(Boolean).length;
+  $('#mBar').style.width = (done / 4 * 100) + '%'; $('#mTxt').textContent = `${done} de 4 etapas completadas`;
+}
+const CHALLENGES = [
+  m => `Encuentra tres detalles de «${m}» que una fotografía no mostraría y explica por qué.`,
+  m => `Marca dos puntos de interés en «${m}» y relaciónalos con un concepto clave del área.`,
+  m => `Explica a un compañero cómo funciona «${m}» usando solo los puntos marcados.`,
+  m => `Propón un problema real donde comprender «${m}» sea indispensable.`,
+  m => `Compara la exploración de «${m}» en 3D, RA y RV: ¿cuál aporta más al objetivo y por qué?`,
+  m => `Si la tecnología desapareciera, ¿cómo representarías «${m}» con materiales del aula?`,
+];
+$('#btnChallenge').addEventListener('click', () => {
+  const name = activeModel()?.name || 'el modelo';
+  const c = $('#challenge'); c.textContent = '🎯 RETO: ' + CHALLENGES[Math.floor(Math.random() * CHALLENGES.length)](name); c.style.display = 'block';
+});
+function activityData() {
+  return { title: $('#aTitle').value.trim() || 'Experiencia XR', area: $('#aArea').value, level: $('#aLevel').value, goal: $('#aGoal').value.trim(), model: activeModel()?.name || 'Sin modelo' };
+}
+function exportSheet() {
+  const d = activityData(), a = state.attribution[state.activeId] || {}, anns = state.annotations[state.activeId] || [];
+  const lines = [
+    'XR FUSION EDU – FICHA DE ACTIVIDAD', '='.repeat(40),
+    `Título: ${d.title}`, `Área: ${d.area}`, `Nivel: ${d.level}`, `Modelo: ${d.model}`, '',
+    'OBJETIVO DE APRENDIZAJE', d.goal, '',
+    'MISIÓN XR: MIRAR COMO INVESTIGADOR',
+    ...STEPS.map(([t, s], i) => `[${state.mission[i] ? 'x' : ' '}] ${i + 1}. ${t}: ${s}`), '',
+    'PUNTOS DE INTERÉS', ...(anns.length ? anns.map((p, i) => `${i + 1}. ${p.text}`) : ['(ninguno)']), '',
+    'RETO', $('#challenge').textContent || '(sin generar)', '',
+    'ATRIBUCIÓN', `Modelo: ${a.name || '-'} | Autor: ${a.author || '-'} | Licencia: ${a.license || '-'} | Fuente: ${a.url || '-'}`, '',
+    'Pregunta detonadora: Si la tecnología desapareciera, ¿qué aprendizaje debería permanecer?',
+    `Generado: ${new Date().toLocaleString('es')}`,
+  ];
+  const blob = new Blob([lines.join('\n')], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = el('a', { href: url, download: `ficha-${d.title.replace(/[^\wáéíóúñ-]+/gi, '_').slice(0, 40)}.txt` });
+  document.body.append(link); link.click(); link.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+  toast('Ficha descargada', 'ok');
+}
+$('#btnSheet').addEventListener('click', exportSheet);
+
+/* ===== Prompt copilot ===== */
+const TYPES = {
+  seq: ['una secuencia didáctica antes-durante-después', 'Organiza: ANTES (activación de saberes previos y propósito), DURANTE (exploración guiada en 3D, RA o RV con tareas concretas por rol) y DESPUÉS (síntesis, transferencia y evaluación). Indica tiempos para cada fase.'],
+  soc: ['un banco de preguntas socráticas', 'Formula 12 preguntas progresivas: clarificación, supuestos, evidencias, perspectivas, implicaciones y meta-preguntas, vinculadas a detalles observables del modelo.'],
+  rub: ['una rúbrica analítica de desempeño', 'Incluye 4 criterios (observación, señalamiento, explicación conceptual, transferencia) y 4 niveles (inicial, en desarrollo, logrado, destacado) con descriptores observables.'],
+  dua: ['adaptaciones basadas en el Diseño Universal para el Aprendizaje (DUA)', 'Propón alternativas para múltiples formas de representación, acción/expresión e implicación; incluye opciones accesibles sin dispositivos XR.'],
+  case: ['un caso o simulación profesional', 'Diseña un escenario realista donde el estudiante asuma un rol profesional, use el modelo 3D para tomar decisiones y justifique sus resultados.'],
+};
+function buildPrompt() {
+  const d = activityData(), t = TYPES[$('#iType').value], dur = $('#iDur').value, anns = state.annotations[state.activeId] || [];
+  return `Actúa como un diseñador instruccional experto en tecnologías inmersivas y en ${d.area}.
+
+CONTEXTO
+- Experiencia: ${d.title}
+- Modelo 3D: ${d.model}${anns.length ? `\n- Puntos de interés marcados: ${anns.map(a => a.text).join('; ')}` : ''}
+- Área de conocimiento: ${d.area}
+- Nivel educativo: ${d.level}
+- Duración: ${dur} minutos
+- Objetivo de aprendizaje: ${d.goal}
+- Modalidades disponibles: exploración 3D, realidad aumentada y realidad virtual (con alternativa 3D si no hay dispositivo compatible).
+- Misión: "Mirar como investigador" (Observar, Señalar, Explicar, Transferir) con roles Observador, Conector y Crítico.
+
+TAREA
+Diseña ${t[0]}. ${t[1]}
+
+CONDICIONES
+- Ajusta lenguaje y complejidad al nivel ${d.level}.
+- Distribuye las actividades en ${dur} minutos exactos.
+- Justifica cuándo conviene 3D, RA o RV y cuándo una alternativa no tecnológica.
+- Incluye al menos una evidencia de aprendizaje verificable.
+- Cierra con la pregunta: "Si la tecnología desapareciera, ¿qué aprendizaje debería permanecer?"
+
+Presenta la respuesta con títulos claros y formato fácil de usar en el aula.`;
+}
+$('#btnPrompt').addEventListener('click', () => { $('#promptOut').textContent = buildPrompt(); toast('Prompt didáctico creado', 'ok'); });
+$('#btnCopy').addEventListener('click', async () => {
+  const txt = $('#promptOut').textContent; if (!txt || txt.startsWith('El prompt aparecerá')) { toast('Primero crea el prompt', 'warn'); return; }
+  try { await navigator.clipboard.writeText(txt); toast('Prompt copiado', 'ok'); }
+  catch { const ta = el('textarea'); ta.value = txt; document.body.append(ta); ta.select(); document.execCommand('copy'); ta.remove(); toast('Prompt copiado', 'ok'); }
+});
+
+/* ===== Speech ===== */
+function speak(text) {
+  if (!('speechSynthesis' in window)) { toast('Tu navegador no admite síntesis de voz', 'warn'); return; }
+  if (speechSynthesis.speaking) { speechSynthesis.cancel(); toast('Narración detenida'); return; }
+  const u = new SpeechSynthesisUtterance(text); u.lang = 'es-ES'; u.rate = 1;
+  const v = speechSynthesis.getVoices().find(v => v.lang?.startsWith('es')); if (v) u.voice = v;
+  u.onerror = () => toast('No se pudo reproducir la narración', 'warn');
+  speechSynthesis.speak(u);
+}
+$('#btnNarrate').addEventListener('click', () => {
+  const d = activityData();
+  speak(`${d.title}. Misión XR: mirar como investigador. ${STEPS.map(([t, s]) => `${t}: ${s}`).join(' ')} Objetivo de aprendizaje: ${d.goal}`);
+});
+$('#btnListen').addEventListener('click', () => {
+  const t = $('#promptOut').textContent; if (t.startsWith('El prompt aparecerá')) { toast('Primero crea el prompt', 'warn'); return; } speak(t);
+});
+
+/* ===== Panel tabs ===== */
+$$('[data-ptab]').forEach(b => b.addEventListener('click', () => {
+  $$('[data-ptab]').forEach(x => x.setAttribute('aria-selected', x === b));
+  $$('[data-panel]').forEach(p => p.hidden = p.dataset.panel !== b.dataset.ptab);
+}));
+
+/* ===== Diagnostics ===== */
+function setDot(sel, cls) { const d = $(sel); d.className = 'dot ' + cls; }
+async function checkXR() {
+  state.xr.https = window.isSecureContext;
+  try { state.xr.embedded = window.self !== window.top; } catch { state.xr.embedded = true; }
+  let vr = false;
+  try { vr = !!(navigator.xr && await navigator.xr.isSessionSupported('immersive-vr')); } catch {}
+  state.xr.vr = vr; setDot('#stVR', window.AFRAME ? (vr ? 'ok' : 'warn') : 'warn');
+  await customElements.whenDefined('model-viewer'); setDot('#st3d', state.xr.modelStatus === 'error' ? 'warn' : 'ok');
+  updateAR();
+}
+function renderDiag() {
+  const x = state.xr, items = [
+    [x.https, 'Conexión segura (HTTPS)', x.https ? 'Contexto seguro activo.' : 'Sin HTTPS no se puede acceder a cámara ni WebXR. Publica en GitHub Pages (HTTPS) o usa localhost.'],
+    [!x.embedded, 'Ejecución directa', x.embedded ? 'La app está incrustada en otra página; los navegadores suelen bloquear RA/RV dentro de iframes. Ábrela en una pestaña propia.' : 'La aplicación no está incrustada.'],
+    [x.ar, 'Realidad aumentada', x.ar ? 'RA disponible (WebXR, Scene Viewer o Quick Look).' : 'RA no disponible en este dispositivo. Alternativa: usa el modo Explorar 3D o abre la app en un móvil compatible.'],
+    [x.vr, 'Realidad virtual (WebXR)', x.vr ? 'Visor inmersivo detectado.' : 'Sin visor WebXR. Alternativa: recorre el laboratorio RV en pantalla con WASD y ratón.'],
+    [x.modelStatus === 'cargado', 'Modelo seleccionado', `Estado: ${x.modelStatus}${activeModel() ? ' · ' + activeModel().name : ''}.`],
+  ];
+  const ul = $('#diagList'); ul.replaceChildren();
+  items.forEach(([ok, t, d]) => ul.append(el('li', {}, el('span', { text: ok ? '✅' : '⚠️', 'aria-hidden': 'true' }), el('div', {}, el('b', { text: t }), el('small', { text: d })))));
+}
+$('#btnDiag').addEventListener('click', async () => { await checkXR(); renderDiag(); $('#diagDlg').showModal(); });
+$('#dRe').addEventListener('click', async () => { await checkXR(); renderDiag(); toast('Diagnóstico actualizado'); });
+$('#dClose').addEventListener('click', () => $('#diagDlg').close());
+$('#btnHelp').addEventListener('click', () => $('#helpDlg').showModal());
+$('#hClose').addEventListener('click', () => $('#helpDlg').close());
+$('#wExplore').addEventListener('click', () => { $('#welcome').close(); $('#library').scrollIntoView({ behavior: 'smooth' }); });
+$('#wStart').addEventListener('click', () => { $('#welcome').close(); setMode('3d'); $('#viewerCol').scrollIntoView({ behavior: 'smooth' }); toast('Misión iniciada: comienza por OBSERVAR', 'ok'); });
+
+/* ===== Upload wiring ===== */
+const drop = $('#drop'), fileIn = $('#fileIn');
+drop.addEventListener('click', () => fileIn.click());
+drop.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileIn.click(); } });
+$('#btnPick').addEventListener('click', () => fileIn.click());
+fileIn.addEventListener('change', () => { importFiles(fileIn.files); fileIn.value = ''; });
+['dragenter', 'dragover'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('over'); }));
+['dragleave', 'drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('over'); }));
+drop.addEventListener('drop', e => importFiles(e.dataTransfer.files));
+$('#btnUrl').addEventListener('click', () => importUrl($('#urlIn').value.trim()));
+$('#urlIn').addEventListener('keydown', e => { if (e.key === 'Enter') importUrl(e.target.value.trim()); });
+
+/* ===== Keyboard ===== */
+document.addEventListener('keydown', e => {
+  if (e.target.matches('input,textarea,select') || document.querySelector('dialog[open]')) return;
+  if (e.key === 'Escape' && state.pinMode) setPin(false);
+  if (state.mode === 'vr' && /^[wasd]$/i.test(e.key)) return;
+  if (e.key === '1') setMode('3d'); if (e.key === '2') setMode('ar'); if (e.key === '3') setMode('vr');
+});
+window.addEventListener('beforeunload', () => state.library.forEach(m => m.objectURL && URL.revokeObjectURL(m.src)));
+
+/* ===== Init ===== */
+renderMission(); renderLibrary();
+const demo = addModel({ name: 'Astronaut', src: DEMO, size: null, origin: 'modelviewer.dev' });
+state.attribution[demo.id] = { name: 'Astronaut', author: 'Google / modelviewer.dev', license: 'CC0 (demo)', url: DEMO };
+customElements.whenDefined('model-viewer').then(() => selectModel(demo.id));
+mv.addEventListener('camera-change', e => { if (e.detail.source === 'user-interaction' && !state.mission[0]) { state.mission[0] = true; renderMission(); } }, { once: false });
+checkXR();
+if (window.HTMLDialogElement) $('#welcome').showModal();
+})();
+</script>
+</body>
+</html>
